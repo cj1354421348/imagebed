@@ -47,6 +47,7 @@
       font-weight: 600;
       background: linear-gradient(90deg, var(--accent), #6b7fd4);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
       font-size: 2rem;
     }
@@ -251,55 +252,59 @@
         width: 100%;
       }
     }
+
+    .github-link {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      color: var(--text-muted);
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .github-link:hover {
+      color: var(--text);
+      transform: scale(1.1);
+    }
   </style>
 </head>
 
 <body>
+  <a href="https://github.com/cj1354421348/imagebed" target="_blank" class="github-link" title="GitHub">
+    <svg viewBox="0 0 16 16" width="24" height="24" fill="currentColor">
+      <path
+        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  </a>
   <div class="container">
     <h1>图床中转</h1>
-
     <div class="backend-selector">
       <button class="backend-btn active" data-backend="cloudinary">☁️ Cloudinary</button>
       <button class="backend-btn" data-backend="imgbb">📦 ImgBB</button>
     </div>
-
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">📤</div>
       <div class="upload-text">拖拽图片到这里，或点击选择</div>
       <div class="upload-hint">支持 Ctrl+V 粘贴 · PNG/JPG/GIF/WEBP</div>
       <input type="file" id="fileInput" accept="image/*">
     </div>
-
     <div class="progress" id="progress">
       <div class="progress-bar"></div>
     </div>
     <div class="error" id="error"></div>
-
     <div class="result" id="result">
       <img class="result-image" id="resultImage" alt="Uploaded image">
       <div class="result-links">
-        <div class="link-row">
-          <span class="link-label">直链</span>
-          <input class="link-input" id="linkUrl" readonly>
-          <button class="copy-btn" data-target="linkUrl">复制</button>
-        </div>
-        <div class="link-row">
-          <span class="link-label">Markdown</span>
-          <input class="link-input" id="linkMd" readonly>
-          <button class="copy-btn" data-target="linkMd">复制</button>
-        </div>
-        <div class="link-row">
-          <span class="link-label">HTML</span>
-          <input class="link-input" id="linkHtml" readonly>
-          <button class="copy-btn" data-target="linkHtml">复制</button>
-        </div>
+        <div class="link-row"><span class="link-label">直链</span><input class="link-input" id="linkUrl" readonly><button
+            class="copy-btn" data-target="linkUrl">复制</button></div>
+        <div class="link-row"><span class="link-label">Markdown</span><input class="link-input" id="linkMd"
+            readonly><button class="copy-btn" data-target="linkMd">复制</button></div>
+        <div class="link-row"><span class="link-label">HTML</span><input class="link-input" id="linkHtml"
+            readonly><button class="copy-btn" data-target="linkHtml">复制</button></div>
       </div>
     </div>
   </div>
-
   <script>
     let currentBackend = 'cloudinary';
-
     const uploadZone = document.getElementById('uploadZone');
     const fileInput = document.getElementById('fileInput');
     const progress = document.getElementById('progress');
@@ -315,98 +320,30 @@
     });
 
     uploadZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files[0]) uploadFile(e.target.files[0]);
-    });
-
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
+    fileInput.addEventListener('change', (e) => { if (e.target.files[0]) uploadFile(e.target.files[0]); });
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
     uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
-    });
-
-    document.addEventListener('paste', (e) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          uploadFile(item.getAsFile());
-          break;
-        }
-      }
-    });
+    uploadZone.addEventListener('drop', (e) => { e.preventDefault(); uploadZone.classList.remove('dragover'); if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); });
+    document.addEventListener('paste', (e) => { const items = e.clipboardData?.items; if (!items) return; for (const item of items) { if (item.type.startsWith('image/')) { uploadFile(item.getAsFile()); break; } } });
 
     async function uploadFile(file) {
       if (!file.type.startsWith('image/')) { showError('请选择图片文件'); return; }
       if (file.size > 10 * 1024 * 1024) { showError('图片大小不能超过 10MB'); return; }
-
       showProgress();
-
       try {
         const base64 = await fileToBase64(file);
-        const response = await fetch('/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64, backend: currentBackend }),
-        });
-
+        const response = await fetch('/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: base64, backend: currentBackend }) });
         const data = await response.json();
         if (!data.success) throw new Error(data.error || 'Upload failed');
         showResult(data.data);
-      } catch (err) {
-        showError(err.message);
-      }
+      } catch (err) { showError(err.message); }
     }
 
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function showProgress() {
-      error.classList.remove('show');
-      result.classList.remove('show');
-      progress.classList.add('show');
-      uploadZone.classList.add('uploading');
-    }
-
-    function showError(msg) {
-      progress.classList.remove('show');
-      uploadZone.classList.remove('uploading');
-      error.textContent = '❌ ' + msg;
-      error.classList.add('show');
-    }
-
-    function showResult(data) {
-      progress.classList.remove('show');
-      uploadZone.classList.remove('uploading');
-
-      document.getElementById('resultImage').src = data.link;
-      document.getElementById('linkUrl').value = data.link;
-      document.getElementById('linkMd').value = '![image](' + data.link + ')';
-      document.getElementById('linkHtml').value = '<img src="' + data.link + '" alt="image">';
-
-      result.classList.add('show');
-    }
-
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const input = document.getElementById(btn.dataset.target);
-        await navigator.clipboard.writeText(input.value);
-        btn.textContent = '✓';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 1500);
-      });
-    });
+    function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); }); }
+    function showProgress() { error.classList.remove('show'); result.classList.remove('show'); progress.classList.add('show'); uploadZone.classList.add('uploading'); }
+    function showError(msg) { progress.classList.remove('show'); uploadZone.classList.remove('uploading'); error.textContent = '❌ ' + msg; error.classList.add('show'); }
+    function showResult(data) { progress.classList.remove('show'); uploadZone.classList.remove('uploading'); document.getElementById('resultImage').src = data.link; document.getElementById('linkUrl').value = data.link; document.getElementById('linkMd').value = '![image](' + data.link + ')'; document.getElementById('linkHtml').value = '<img src="' + data.link + '" alt="image">'; result.classList.add('show'); }
+    document.querySelectorAll('.copy-btn').forEach(btn => { btn.addEventListener('click', async () => { const input = document.getElementById(btn.dataset.target); await navigator.clipboard.writeText(input.value); btn.textContent = '✓'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 1500); }); });
   </script>
 </body>
 

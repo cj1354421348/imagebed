@@ -15,24 +15,18 @@
 
 1. **Fork 本仓库**
 
-2. **登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)**
+2. **[Cloudflare Dashboard](https://dash.cloudflare.com/)** → Workers & Pages → Create → Pages → Connect to Git
 
-3. **创建 Pages 项目**：
-   - 进入 **Workers & Pages** → **Create**
-   - 选择 **Pages** → **Connect to Git**
-   - 选择你 fork 的仓库
-   - 构建设置：
-     - **Root directory**: `cloudflare-pages`
-     - **Build command**: 留空
-     - **Build output directory**: `public`
+3. **构建设置**：
+   - Root directory: `cloudflare-pages`
+   - Build command: `npm run build`
+   - Build output directory: `public`
 
-4. **设置环境变量**（Settings → Environment Variables）：
+4. **Settings → Environment Variables** 添加：
    - `CLOUDINARY_CLOUD_NAME`
    - `CLOUDINARY_API_KEY`
    - `CLOUDINARY_API_SECRET`
    - `IMGBB_API_KEY`
-
-5. **重新部署**
 
 ---
 
@@ -40,50 +34,37 @@
 
 1. **Fork 本仓库**
 
-2. **在 [Vercel](https://vercel.com/) 导入项目**
-   - Root Directory 选择 `vercel`
+2. **[Vercel](https://vercel.com/)** 导入项目，Root Directory 选择 `vercel`
 
-3. **设置环境变量**：
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
-   - `IMGBB_API_KEY`
+3. **Build Command**: `npm run build`
 
-4. **部署**
-
----
-
-### 本地 Workers 开发
-
-```bash
-cd cloudflare-workers
-cp wrangler.example.toml wrangler.toml
-# 编辑 wrangler.toml 填入密钥
-npx wrangler dev
-```
+4. **Environment Variables** 添加同上
 
 ## 🔑 获取 API 密钥
 
 | 服务 | 获取地址 |
 |------|---------|
-| Cloudinary | https://cloudinary.com/ (Dashboard) |
+| Cloudinary | https://cloudinary.com/ |
 | ImgBB | https://api.imgbb.com/ |
 
 ## 📁 项目结构
 
 ```
-├── cloudflare-pages/      # CF Pages 部署（推荐）
+├── public/                # 共享前端文件（单一来源）
+│   ├── index.html
+│   └── favicon.svg
+├── cloudflare-pages/      # CF Pages 部署
 │   ├── functions/upload.js
-│   └── public/index.html
-├── cloudflare-workers/    # CF Workers 本地开发
-│   ├── src/index.js
-│   └── wrangler.example.toml
-├── vercel/                # Vercel 部署
-│   ├── api/upload.js
-│   ├── public/index.html
-│   └── vercel.json
-└── README.md
+│   ├── public/            # 构建时从根 public/ 复制
+│   └── package.json
+└── vercel/                # Vercel 部署
+    ├── api/upload.js
+    ├── public/            # 构建时从根 public/ 复制
+    ├── package.json
+    └── vercel.json
 ```
+
+> **修改前端只需要编辑 `public/index.html`，构建时会自动同步到各平台。**
 
 ## 📝 License
 

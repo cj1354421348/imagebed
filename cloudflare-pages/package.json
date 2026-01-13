@@ -1,0 +1,7 @@
+{
+    "name": "imagebed-cf",
+    "scripts": {
+        "build": "cp -r ../public/* ./public/ 2>/dev/null || xcopy ..\\public\\* .\\public\\ /E /Y",
+        "dev": "npm run build && npx wrangler pages dev ./public"
+    }
+}

@@ -1,10 +1,6 @@
 {
-  "name": "imgur-image-hosting",
-  "version": "1.0.0",
-  "private": true,
+  "name": "imagebed-vercel",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step required'",
-    "start": "vercel dev"
+    "build": "cp -r ../public/* ./public/ 2>/dev/null || xcopy ..\\public\\* .\\public\\ /E /Y"
   }
 }

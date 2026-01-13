@@ -23,5 +23,6 @@
                 }
             ]
         }
-    ]
+    ],
+    "buildCommand": "cp -r ../public/* ./public/ 2>/dev/null || xcopy ..\\public\\* .\\public\\ /E /Y"
 }

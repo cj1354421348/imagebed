@@ -1,13 +1,24 @@
 /**
- * 多后端图床 - Vercel Edge Runtime 版本
- * 支持 Cloudinary 和 ImgBB
+ * Vercel Edge Runtime - 图床中转
+ * 支持单图和批量上传
  */
 
-export const config = {
-    runtime: 'edge',
-};
+export const config = { runtime: 'edge' };
 
-// ============ Cloudinary 上传 ============
+const MAX_BATCH_SIZE = 10; // 后端强制限制
+
+function jsonResponse(data, status = 200) {
+    return new Response(JSON.stringify(data), {
+        status,
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        },
+    });
+}
+
 async function generateSignature(params, apiSecret) {
     const sortedKeys = Object.keys(params).sort();
     const paramString = sortedKeys.map(key => `${key}=${params[key]}`).join('&');
@@ -40,15 +51,9 @@ async function uploadToCloudinary(imageData) {
     const result = await response.json();
     if (result.error) throw new Error(result.error.message);
 
-    return {
-        id: result.public_id,
-        link: result.secure_url,
-        width: result.width,
-        height: result.height,
-    };
+    return { id: result.public_id, link: result.secure_url, width: result.width, height: result.height };
 }
 
-// ============ ImgBB 上传 ============
 async function uploadToImgBB(imageData) {
     const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
 
@@ -56,37 +61,24 @@ async function uploadToImgBB(imageData) {
     formData.append('key', process.env.IMGBB_API_KEY);
     formData.append('image', base64Data);
 
-    const response = await fetch('https://api.imgbb.com/1/upload', {
-        method: 'POST',
-        body: formData,
-    });
-
+    const response = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
     const result = await response.json();
     if (!result.success) throw new Error(result.error?.message || 'ImgBB upload failed');
 
-    return {
-        id: result.data.id,
-        link: result.data.url,
-        width: result.data.width,
-        height: result.data.height,
-    };
+    return { id: result.data.id, link: result.data.url, width: result.data.width, height: result.data.height };
 }
 
-// JSON 响应
-function jsonResponse(data, status = 200) {
-    return new Response(JSON.stringify(data), {
-        status,
-        headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-        },
-    });
+async function uploadSingle(image, backend) {
+    if (backend === 'imgbb') {
+        if (!process.env.IMGBB_API_KEY) throw new Error('ImgBB not configured');
+        return await uploadToImgBB(image);
+    } else {
+        if (!process.env.CLOUDINARY_CLOUD_NAME) throw new Error('Cloudinary not configured');
+        return await uploadToCloudinary(image);
+    }
 }
 
 export default async function handler(request) {
-    // CORS 预检
     if (request.method === 'OPTIONS') {
         return new Response(null, {
             headers: {
@@ -103,27 +95,36 @@ export default async function handler(request) {
 
     try {
         const body = await request.json();
-        const imageData = body.image;
         const backend = body.backend || 'cloudinary';
 
-        if (!imageData) {
-            return jsonResponse({ success: false, error: 'No image provided' }, 400);
+        // 批量上传
+        if (body.images && Array.isArray(body.images)) {
+            if (body.images.length > MAX_BATCH_SIZE) {
+                return jsonResponse({
+                    success: false,
+                    error: `批量上传最多 ${MAX_BATCH_SIZE} 张图片`
+                }, 400);
+            }
+
+            const results = [];
+            for (const image of body.images) {
+                try {
+                    const result = await uploadSingle(image, backend);
+                    results.push({ success: true, data: result });
+                } catch (error) {
+                    results.push({ success: false, error: error.message });
+                }
+            }
+            return jsonResponse({ success: true, batch: true, results });
         }
 
-        let result;
-        if (backend === 'imgbb') {
-            if (!process.env.IMGBB_API_KEY) {
-                return jsonResponse({ success: false, error: 'ImgBB API key not configured' }, 500);
-            }
-            result = await uploadToImgBB(imageData);
-        } else {
-            if (!process.env.CLOUDINARY_CLOUD_NAME) {
-                return jsonResponse({ success: false, error: 'Cloudinary not configured' }, 500);
-            }
-            result = await uploadToCloudinary(imageData);
-        }
+        // 单图上传
+        const { image } = body;
+        if (!image) return jsonResponse({ success: false, error: 'No image provided' }, 400);
 
+        const result = await uploadSingle(image, backend);
         return jsonResponse({ success: true, data: result });
+
     } catch (error) {
         return jsonResponse({ success: false, error: error.message }, 500);
     }
