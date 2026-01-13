@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图床 - Image Hosting</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent: #3448c5;
+            --accent-glow: rgba(52, 72, 197, 0.3);
+            --text: #eee;
+            --text-muted: #888;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00d26a;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            min-height: 100vh;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 24px;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--accent), #6b7fd4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+        }
+
+        .backend-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            justify-content: center;
+        }
+
+        .backend-btn {
+            padding: 8px 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .backend-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .backend-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .upload-zone {
+            background: var(--bg-card);
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.uploading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .upload-hint {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .result {
+            margin-top: 20px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-image {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .result-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .link-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .link-label {
+            min-width: 80px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .link-input {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text);
+            font-size: 12px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+        }
+
+        .error {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+            color: #ff6b6b;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .progress {
+            height: 4px;
+            background: var(--bg-secondary);
+            border-radius: 2px;
+            margin-top: 16px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress.show {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #6b7fd4);
+            width: 0%;
+            animation: loading 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                width: 0%;
+            }
+
+            50% {
+                width: 70%;
+            }
+
+            100% {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🖼️ Image Hosting</h1>
+
+        <div class="backend-selector">
+            <button class="backend-btn active" data-backend="cloudinary">☁️ Cloudinary</button>
+            <button class="backend-btn" data-backend="imgbb">📦 ImgBB</button>
+        </div>
+
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📤</div>
+            <div class="upload-text">拖拽图片到这里，或点击选择</div>
+            <div class="upload-hint">支持 Ctrl+V 粘贴 · PNG/JPG/GIF/WEBP</div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="progress" id="progress">
+            <div class="progress-bar"></div>
+        </div>
+        <div class="error" id="error"></div>
+
+        <div class="result" id="result">
+            <img class="result-image" id="resultImage" alt="Uploaded image">
+            <div class="result-links">
+                <div class="link-row">
+                    <span class="link-label">直链</span>
+                    <input class="link-input" id="linkUrl" readonly>
+                    <button class="copy-btn" data-target="linkUrl">复制</button>
+                </div>
+                <div class="link-row">
+                    <span class="link-label">Markdown</span>
+                    <input class="link-input" id="linkMd" readonly>
+                    <button class="copy-btn" data-target="linkMd">复制</button>
+                </div>
+                <div class="link-row">
+                    <span class="link-label">HTML</span>
+                    <input class="link-input" id="linkHtml" readonly>
+                    <button class="copy-btn" data-target="linkHtml">复制</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentBackend = 'cloudinary';
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const progress = document.getElementById('progress');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+
+        document.querySelectorAll('.backend-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.backend-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentBackend = btn.dataset.backend;
+            });
+        });
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) uploadFile(e.target.files[0]);
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+        });
+
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    uploadFile(item.getAsFile());
+                    break;
+                }
+            }
+        });
+
+        async function uploadFile(file) {
+            if (!file.type.startsWith('image/')) { showError('请选择图片文件'); return; }
+            if (file.size > 10 * 1024 * 1024) { showError('图片大小不能超过 10MB'); return; }
+
+            showProgress();
+
+            try {
+                const base64 = await fileToBase64(file);
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64, backend: currentBackend }),
+                });
+
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error || 'Upload failed');
+                showResult(data.data);
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function showProgress() {
+            error.classList.remove('show');
+            result.classList.remove('show');
+            progress.classList.add('show');
+            uploadZone.classList.add('uploading');
+        }
+
+        function showError(msg) {
+            progress.classList.remove('show');
+            uploadZone.classList.remove('uploading');
+            error.textContent = '❌ ' + msg;
+            error.classList.add('show');
+        }
+
+        function showResult(data) {
+            progress.classList.remove('show');
+            uploadZone.classList.remove('uploading');
+
+            document.getElementById('resultImage').src = data.link;
+            document.getElementById('linkUrl').value = data.link;
+            document.getElementById('linkMd').value = '![image](' + data.link + ')';
+            document.getElementById('linkHtml').value = '<img src="' + data.link + '" alt="image">';
+
+            result.classList.add('show');
+        }
+
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const input = document.getElementById(btn.dataset.target);
+                await navigator.clipboard.writeText(input.value);
+                btn.textContent = '✓';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 1500);
+            });
+        });
+    </script>
+</body>
+
+</html>
