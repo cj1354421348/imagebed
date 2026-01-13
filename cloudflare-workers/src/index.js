@@ -147,7 +147,8 @@ function getHtmlPage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>图床 - Image Hosting</title>
+  <title>图床中转</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%233448c5'/><stop offset='100%25' style='stop-color:%236b7fd4'/></linearGradient></defs><rect width='32' height='32' rx='6' fill='url(%23g)'/><rect x='6' y='8' width='20' height='16' rx='2' fill='white' opacity='0.95'/><circle cx='11' cy='13' r='2' fill='%233448c5'/><path d='M8 20 L13 15 L16 18 L20 13 L24 18 L24 22 L8 22 Z' fill='%233448c5' opacity='0.7'/></svg>">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -321,7 +322,7 @@ function getHtmlPage() {
 </head>
 <body>
   <div class="container">
-    <h1>🖼️ Image Hosting</h1>
+    <h1>图床中转</h1>
     
     <div class="backend-selector">
       <button class="backend-btn active" data-backend="cloudinary">☁️ Cloudinary</button>
